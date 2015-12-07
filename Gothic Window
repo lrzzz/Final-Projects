@@ -1,0 +1,114 @@
+/*
+2015 Fall CCTP-746 Expressive Computation
+Final Project 1 - Gothic Window
+Li Ruizhong 
+Communication, Culture & Technology
+Georgetown Univeristy
+Acknowledgement: Feng Pei, one of my Communication University of China alumnus, 
+                 who is the best new media artist(which he told me) in China. 
+                 Based on his great experiences of programming and visual communication,
+                 he suggested me take advantages of ArrayList in order to generate, store 
+                 and read random colors instantly and dynamically.
+                 Thus I was enabled to try this possibility to create a parametric 
+                 Gothic window pattern design.
+*/
+int numShape; // the number of shapes in each circle
+float rotateAngle; // the angle of triangles rotatation each time
+float mX; //mX are used to control the size of inner shapes
+float R; // the radius of the outermost ellipse
+float side; // the length outermost circle of triangles' side
+float x,y; //used to simplify the equation of coordinates of triangles
+
+//initial two ArrayList to store PVectors whose x,y,z represent r,g,b
+ArrayList<PVector> myDiamondspalette;
+ArrayList<PVector> myTrianglespalette;
+void setup() {
+  size(600, 400);
+
+  myDiamondspalette = new ArrayList<PVector>();
+  myTrianglespalette = new ArrayList<PVector>();
+
+  ellipseMode(RADIUS);
+
+  rotateAngle=PI/9;
+  numShape= int(TWO_PI/rotateAngle);
+
+  //call this custom funcitons to generate random colors and push into each palette
+  resetColor(myDiamondspalette, numShape);
+  resetColor(myTrianglespalette, numShape);
+
+  R=width*0.26; // because the ellipse is in radius mode, 
+                // the R will not be more than width/2,
+                // otherwise the ellipse will get beyond the bondary
+  setPattern();
+}
+
+void draw() {
+  background(#010101);
+
+  translate(width/2, height/2); // put (0,0) at the center of the canvas
+  smooth();
+  noStroke();
+  fill(#f8f6bd);
+  ellipse(0, 0, R, R); // the ellipse
+
+  strokeWeight(4.4);
+  stroke(#010101);
+  for (int i=0; i<numShape; i++) {
+
+    PVector tem = myDiamondspalette.get(i);
+    fill(color(tem.x, tem.y, tem.z), 221);
+    // rotate diamonds
+    pushMatrix();
+    rotate(rotateAngle*i);
+    quad(0, -R/mX, -x/mX, (y-R)/mX, 0, 0, x/mX, (y-R)/mX);
+    popMatrix();
+
+    tem = myTrianglespalette.get(i);
+    fill(color(tem.x, tem.y, tem.z), 207);
+    //rotate triangles
+    pushMatrix();
+    rotate(rotateAngle*i);
+    triangle(0, -R, -x, y-R, x, y-R); 
+    popMatrix();
+  }
+
+  if (mousePressed) {
+    save("fp1-4_rl861.png");
+  }
+}
+
+
+// define a key event to reGenerate colors
+//click 'd','t'or'r' while running, to reassign colors or size.
+void keyTyped() {
+  if (key == 'd') {
+    resetColor(myDiamondspalette, numShape);
+  }
+  if (key == 't') {
+    resetColor(myTrianglespalette, numShape);
+  }
+  if (key == 'r') {
+    setPattern();
+  }
+}
+
+//define a custom function to generate random colors and push into each palette
+void resetColor(ArrayList<PVector> palette, int count) {
+  if (palette!=null) {
+    palette.clear();
+  }  // To prevent arraylist taking up unnecessary storage of the computer,
+     // clear the former colors when generate new colors
+  for (int i=0; i<count; i++) {
+    palette.add(new PVector(random(255), random(255), random(255)));
+  } // generate random RGB colors
+  println(palette.size()); 
+}
+
+void setPattern() {
+  
+  mX=random(2, 3); // control the size of middle circle diamonds
+  side=R/(2*cos(rotateAngle/2));
+  x=side*sin(rotateAngle/2);
+  y=side*cos(rotateAngle/2);  // The calculation of coordinates of shapes
+}
