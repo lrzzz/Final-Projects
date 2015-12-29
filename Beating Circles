@@ -1,0 +1,152 @@
+/*
+2015 Fall CCTP-746 Expressive Computation
+Final Project 2 - Beating Circles
+Li Ruizhong 
+Communication, Culture & Technology
+Georgetown Univeristy
+*/
+
+/*
+colours:
+http://http//www.brit.co/living/light-up-your-party-with-led-balloons/
+http://www.brit.co/flirty-fluorescent-feathers-another-win-for-duct-tape/
+*/
+
+// default setting when import a minim library
+import ddf.minim.*;
+import ddf.minim.analysis.*;
+import ddf.minim.effects.*;
+import ddf.minim.signals.*;
+import ddf.minim.spi.*;
+import ddf.minim.ugens.*;
+
+Minim myMinim; // instantiate a Minim object
+AudioPlayer mySong; // an object for playing my song
+BeatDetect beat; // an object for detecting beat in my song
+BeatListener bl;
+
+float eRadius; // the radius of the ellipses
+int numUnits; // the number of ellipes in each row or column
+int spaceShape; // the distance between each shape
+int xUnits; 
+int yUnits; 
+float changeColor; // the value of changing color
+float changeShape; // the value of changing shape
+float kickSize, snareSize, hatSize;
+
+void setup() {
+  size(960,960,P3D);
+  myMinim = new Minim(this); // refers to current object
+  //mySong = myMinim.loadFile("marcus_kellis_theme.mp3",2048); // load audio file
+  mySong = myMinim.loadFile("fp2c.mp3",2048);
+  mySong.play(); // action: play my song
+   // create a class for detecting kicks, snares, and hats
+  beat = new BeatDetect(mySong.bufferSize(),mySong.sampleRate());
+  beat.setSensitivity(1); // the sensitivity of the detector when detecting beats
+  
+  kickSize=32;
+  snareSize=16;
+  hatSize=8;
+  
+  bl = new BeatListener(beat,mySong); 
+  eRadius=10;
+  numUnits=6; // set the number of ellipse in a row/column to 10
+  spaceShape = width/numUnits;  // the x size of a unit
+  spaceShape = height/numUnits; // the y size of a unit 
+}
+
+void draw() {
+ background(255);
+ //leave space for the strokeweight of shapes
+ // use the original value of kickSize and hatSize to represent
+ //original kickSize=32, original hatSize=8
+ translate(2*(32+8),2*(32+8));                               
+ smooth();
+ setColor();
+ setShape();
+ if (mousePressed) {
+    save("fp2-3_rl861.png");  
+ }      
+}
+
+void setColor(){
+  float x = map(eRadius,10,60,60,200); // each eRadius from 10 to 60 has its 
+                                      // corresponding transpanrency from 60 to 200
+  changeColor=abs(sin(radians(frameCount/1.0)));   // the value get loop in this way 
+  if (changeColor>0.618){
+  fill(76,73,162, x);
+ } else {
+   if (changeColor < 0.314) {
+     fill (211,25,150,x);
+   } else {
+     fill (25,221,137,x);
+   }
+ }
+}
+
+void setShape() {
+  for (int i=0; i<numUnits; i++){
+   for (int m=0; m<numUnits; m++){
+
+  //draw the shapes in each unit
+     if(beat.isKick()) kickSize=128;
+     if(beat.isSnare()) snareSize=64;
+     if(beat.isHat()) hatSize=32;
+  
+  //the color and transparency of the stroke, 
+  //the strokeWeight, 
+  //and the size of the shape reflects whether kicks, snares or hats.
+    
+    rectMode(RADIUS); 
+    strokeWeight(kickSize/8);
+    stroke(255,255,255,2*kickSize);
+    rect(i*spaceShape, m*spaceShape, kickSize*2, kickSize*2);
+    
+    
+    ellipseMode(CENTER);
+    strokeWeight(snareSize);
+    stroke(snareSize,snareSize,0,2*snareSize);
+    ellipse(i*spaceShape, m*spaceShape, 2*hatSize, 2*hatSize);
+    
+    ellipseMode(CENTER);
+    strokeWeight(hatSize);
+    stroke(hatSize,hatSize,0,2*hatSize);
+    arc(i*spaceShape, m*spaceShape, 2*snareSize, 2*snareSize,radians(frameCount),radians(frameCount+snareSize));
+     
+    // constrain the kickSize, snareSize and hatSize 
+    //not to exceed a maxium(128) and minimum(32) value 
+    kickSize=constrain(kickSize*0.95,32,128);
+    snareSize=constrain(snareSize*0.95,32,128);
+    hatSize=constrain(hatSize*0.95,32,128); 
+     }
+  } 
+}
+
+// regualr setting of BeatListener
+// create a class to clarify the rules
+class BeatListener implements AudioListener {
+  
+  // disallow other classes access to the fields and methods within a class
+  private BeatDetect beat;
+  private AudioPlayer mySong;
+  
+  //the argument in the parenthesis is the statement of the class
+  BeatListener(BeatDetect beat, AudioPlayer mySong) {
+    
+    //this: refers to this sketch
+    this.mySong=mySong;
+    this.mySong.addListener(this);
+    this.beat=beat;
+  }
+ 
+  // part of the BeatListener, declare which song to detect.
+  void samples(float[] samps) {
+    beat.detect(mySong.mix); //initate the beat detector 
+  }
+  
+  void samples(float[] sampsL, float[] sampsR)
+  {
+    beat.detect(mySong.mix);
+  }
+}
+
